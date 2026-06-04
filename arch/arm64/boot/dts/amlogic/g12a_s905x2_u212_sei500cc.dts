@@ -108,6 +108,7 @@
 		/*di CMA pool */
 		di_cma_reserved:linux,di_cma {
 			compatible = "shared-dma-pool";
+			status = "disable";
 			reusable;
 			/* buffer_size = 3621952(yuv422 8bit)
 			 *  | 4736064(yuv422 10bit)
@@ -164,34 +165,11 @@
 		status = "okay";
 	};
 
-	gpioleds {
-		compatible = "gpio-leds";
+	sysled {
+		compatible = "amlogic, sysled";
+		dev_name = "sysled";
 		status = "okay";
-
-		net_red {
-			label="net_red";
-			/*gpios=<&gpio GPIOA_14 GPIO_ACTIVE_LOW>;*/
-			default-state ="on";
-		};
-
-		net_green {
-			label="net_green";
-			/*gpios=<&gpio GPIOA_15 GPIO_ACTIVE_HIGH>;*/
-			default-state ="on";
-		};
-
-		remote_led {
-			label = "remote_led";
-			/*gpios = <&gpio_ao GPIOAO_10 GPIO_ACTIVE_LOW>;*/
-			default-state = "off";
-			linux,default-trigger = "rc_feedback";
-		};
-
-		sys_led {
-			label="sys_led";
-			gpios=<&gpio_ao GPIOAO_11 GPIO_ACTIVE_LOW>;
-			default-state ="on";
-		};
+		led_gpio = <&gpio_ao GPIOAO_11 GPIO_ACTIVE_HIGH>;
 	};
 
 	gpio_keypad {
@@ -208,7 +186,7 @@
 	cvbsout {
 		compatible = "amlogic, cvbsout-g12a";
 		dev_name = "cvbsout";
-		status = "disabled";
+		status = "okay";
 		clocks = <&clkc CLKID_VCLK2_ENCI
 			&clkc CLKID_VCLK2_VENCI0
 			&clkc CLKID_VCLK2_VENCI1
@@ -1411,7 +1389,7 @@
 &usb3_phy_v2 {
 	status = "okay";
 	portnum = <0>;
-	otg = <1>;
+	otg = <0>;
 	gpio-vbus-power = "GPIOH_6";
 	gpios = <&gpio GPIOH_6 GPIO_ACTIVE_HIGH>;
 };
@@ -1419,7 +1397,7 @@
 &dwc2_a {
 	status = "okay";
 	/** 0: normal, 1: otg+dwc3 host only, 2: otg+dwc3 device only*/
-	controller-type = <3>;
+	controller-type = <1>;
 };
 
 &ethmac {
@@ -1496,7 +1474,7 @@
 };
 
 &sd_emmc_b2 {
-	status = "disabled";
+	status = "okay";
 	sd {
 		caps = "MMC_CAP_4_BIT_DATA",
 			 "MMC_CAP_MMC_HIGHSPEED",
