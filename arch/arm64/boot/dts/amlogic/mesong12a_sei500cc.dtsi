@@ -344,28 +344,6 @@
 			#gpio-cells = <2>;
 		};
 		
-		jtag_apao_pins:jtag_apao_pin {
-			mux {
-				  groups = "jtag_ao_tdi",
-				  "jtag_ao_tdo",
-				  "jtag_ao_clk",
-				  "jtag_ao_tms";
-			function = "jtag_a";
-			};
-		};
-		remote_pins:remote_pin {
-			mux {
-				groups = "remote_input_ao";
-				function = "remote_input_ao";
-			};
-		};
-
-		irblaster_pins:irblaster_pin {
-			mux {
-				groups = "remote_out_ao";
-				function = "remote_out_ao";
-			};
-		};
 	};
 
 	pinctrl_periphs: pinctrl@ff634480{
@@ -911,7 +889,7 @@
 				REMOTE_KEY(0x0A, KEY_POWER)
 				REMOTE_KEY(0x0D, KEY_MUTE)
 				REMOTE_KEY(0x0C, KEY_HOME)
-				REMOTE_KEY(0x74, KEY_SEARCH)>;
+				REMOTE_KEY(0x74, 249)>;
 		};
 		map_1: map_1{
 			mapname = "amlogic-remote-3";
