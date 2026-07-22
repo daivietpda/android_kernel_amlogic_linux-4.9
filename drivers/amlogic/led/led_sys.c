@@ -70,6 +70,32 @@ static void aml_sysled_brightness_set(struct led_classdev *cdev,
 	schedule_work(&ldev->work);
 }
 
+#ifdef CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND
+/*
+ * SEI501 uses a bi-colour LED on one GPIO: high is red (standby) and
+ * low is blue (awake). Android's screen-off path uses legacy early-suspend,
+ * not the platform driver's PM suspend callback.
+ */
+static void aml_sysled_early_suspend(struct early_suspend *h)
+{
+	struct aml_sysled_dev *ldev =
+		container_of(h, struct aml_sysled_dev, early_suspend);
+
+	mutex_lock(&ldev->lock);
+	aml_sysled_output_setup(ldev, 1);
+	mutex_unlock(&ldev->lock);
+}
+
+static void aml_sysled_late_resume(struct early_suspend *h)
+{
+	struct aml_sysled_dev *ldev =
+		container_of(h, struct aml_sysled_dev, early_suspend);
+
+	mutex_lock(&ldev->lock);
+	aml_sysled_output_setup(ldev, 0);
+	mutex_unlock(&ldev->lock);
+}
+#endif
 
 static int aml_sysled_dt_parse(struct platform_device *pdev)
 {
@@ -93,6 +119,8 @@ static int aml_sysled_dt_parse(struct platform_device *pdev)
 
 	ldev->d.pin = led_gpio;
 	ldev->d.active_low = flags & OF_GPIO_ACTIVE_LOW;
+	ldev->d.early_suspend_red =
+		of_property_read_bool(node, "amlogic,early-suspend-red");
 	pr_info("led_gpio = %u\n", ldev->d.pin);
 	pr_info("active_low = %u\n", ldev->d.active_low);
 	gpio_request(ldev->d.pin, AML_DEV_NAME);
@@ -137,6 +165,15 @@ static int aml_sysled_probe(struct platform_device *pdev)
 		return ret;
 	}
 
+#ifdef CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND
+	if (ldev->d.early_suspend_red) {
+		ldev->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN;
+		ldev->early_suspend.suspend = aml_sysled_early_suspend;
+		ldev->early_suspend.resume = aml_sysled_late_resume;
+		register_early_suspend(&ldev->early_suspend);
+	}
+#endif
+
 	/* set led default on */
 	aml_sysled_output_setup(ldev, 1);
 
@@ -149,6 +186,10 @@ static int __exit aml_sysled_remove(struct platform_device *pdev)
 {
 	struct aml_sysled_dev *ldev = platform_get_drvdata(pdev);
 
+#ifdef CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND
+	if (ldev->d.early_suspend_red)
+		unregister_early_suspend(&ldev->early_suspend);
+#endif
 	led_classdev_unregister(&ldev->cdev);
 	cancel_work_sync(&ldev->work);
 	gpio_free(ldev->d.pin);
@@ -162,8 +203,7 @@ static int __exit aml_sysled_remove(struct platform_device *pdev)
 static void aml_sysled_shutdown(struct platform_device *pdev)
 {
 	struct aml_sysled_dev *ldev = platform_get_drvdata(pdev);
-	/* set led off*/
-	aml_sysled_output_setup(ldev, 0);
+	aml_sysled_output_setup(ldev, ldev->d.early_suspend_red ? 1 : 0);
 	pr_info("module shutdown ok\n");
 }
 
@@ -172,8 +212,7 @@ static void aml_sysled_shutdown(struct platform_device *pdev)
 static int aml_sysled_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct aml_sysled_dev *ldev = platform_get_drvdata(pdev);
-	/* set led off */
-	aml_sysled_output_setup(ldev, 0);
+	aml_sysled_output_setup(ldev, ldev->d.early_suspend_red ? 1 : 0);
 	pr_info("module suspend ok\n");
 	return 0;
 }
@@ -181,8 +220,7 @@ static int aml_sysled_suspend(struct platform_device *pdev, pm_message_t state)
 static int aml_sysled_resume(struct platform_device *pdev)
 {
 	struct aml_sysled_dev *ldev = platform_get_drvdata(pdev);
-	/* set led on */
-	aml_sysled_output_setup(ldev, 1);
+	aml_sysled_output_setup(ldev, ldev->d.early_suspend_red ? 0 : 1);
 	pr_info("module resume ok\n");
 	return 0;
 }
@@ -230,4 +268,3 @@ module_exit(aml_sysled_exit);
 MODULE_DESCRIPTION("Amlogic sys led driver");
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amlogic, Inc.");
-

@@ -21,6 +21,9 @@
 #include <linux/leds.h>
 #include <linux/workqueue.h>
 #include <linux/mutex.h>
+#ifdef CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND
+#include <linux/amlogic/pm.h>
+#endif
 
 enum {
 	LED_GPIO_STATE_OFF = 0,
@@ -32,6 +35,7 @@ struct aml_led_gpio {
 	unsigned int pin;
 	unsigned int active_low;
 	unsigned int state;
+	bool early_suspend_red;
 };
 
 
@@ -42,6 +46,9 @@ struct aml_sysled_dev {
 
 	struct work_struct work;
 	struct mutex lock;
+#ifdef CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND
+	struct early_suspend early_suspend;
+#endif
 };
 
 #endif

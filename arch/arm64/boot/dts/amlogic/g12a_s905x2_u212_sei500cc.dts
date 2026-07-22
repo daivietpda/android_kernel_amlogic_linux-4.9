@@ -170,6 +170,7 @@
 		dev_name = "sysled";
 		status = "okay";
 		led_gpio = <&gpio_ao GPIOAO_11 GPIO_ACTIVE_HIGH>;
+		amlogic,early-suspend-red;
 	};
 
 	gpio_keypad {
@@ -1521,7 +1522,7 @@
 &dwc2_a {
 	status = "okay";
 	/** 0: normal, 1: otg+dwc3 host only, 2: otg+dwc3 device only*/
-	controller-type = <3>;
+	controller-type = <2>;
 };
 
 &ethmac {
